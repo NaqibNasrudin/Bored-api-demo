@@ -1,0 +1,29 @@
+trigger:
+    branches:
+        include:
+            - dev*
+            - uat
+            - main
+
+variables:
+    - group: starter-kit
+
+pool:
+    vmImage: ubuntu-latest
+
+stages:
+    - template: pipeline/sonarqube-scan.yml
+    - template: pipeline/common.yml
+    - template: pipeline/check-pr-title.yml
+    - template: pipeline/build.yml
+      parameters:
+          StageDependencies: ['CheckPRTitleBuildEnvironment']
+    - template: pipeline/staging-release.yml
+      parameters:
+          StageDependencies: ['CheckPRTitleBuildEnvironment']
+    - template: pipeline/uat-release.yml
+      parameters:
+          StageDependencies: ['CheckPRTitleBuildEnvironment']
+    - template: pipeline/production-release.yml
+      parameters:
+          StageDependencies: ['CheckPRTitleBuildEnvironment']

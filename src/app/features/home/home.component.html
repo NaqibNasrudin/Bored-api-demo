@@ -1,0 +1,58 @@
+<div class="h-screen flex flex-col items-center justify-center">
+    <h1 class="my-5 text-lg font-bold">Bored API Demo</h1>
+    <div class="w-2/3 bg-gray-100 flex flex-col items-center justify-center rounded-xl shadow-xl p-10">
+        <form class="w-1/2 flex flex-col" [formGroup]="form">
+            <input
+                type="text"
+                formControlName="activity"
+                class="w-full p-3 rounded-lg border border-gray-300 my-3"
+                placeholder="Enter activity key" />
+        </form>
+        <button type="button" class="w-1/2 bg-blue-400 py-3 rounded-lg text-white my-3" (click)="callBoredApi()">
+            Execute
+        </button>
+
+        @if (isLoading) {
+            <div class="bg-white w-1/2 rounded-xl p-5 flex flex-col gap-5">
+                @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+                    <div class="flex flex-col">
+                        <div class="font-bold h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div class="text-gray-500 h-3 mt-2 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                }
+            </div>
+        } @else {
+            <div *ngIf="!activity" class="bg-white w-1/2 rounded-xl flex items-center justify-center p-10">No Data</div>
+            <div *ngIf="activity" class="bg-white w-1/2 rounded-xl p-5 flex flex-col gap-5">
+                <div class="flex flex-col">
+                    <div class="font-bold">Activity</div>
+                    <div class="text-gray-500">{{ activity.activity || '-' }}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold">Type</div>
+                    <div class="text-gray-500">{{ activity.type || '-' }}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold">Participants</div>
+                    <div class="text-gray-500">{{ activity.participants || '-' }}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold">Price</div>
+                    <div class="text-gray-500">{{ activity.price || '-' }}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold">Link</div>
+                    <div class="text-gray-500">{{ activity.link || '-' }}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold">Accessibility</div>
+                    <div class="text-gray-500">{{ activity.accessibility || '-' }}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold">Key</div>
+                    <div class="text-gray-500">{{ activity.key || '-' }}</div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

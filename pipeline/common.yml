@@ -1,0 +1,10 @@
+stages:
+    - stage: Common
+      jobs:
+          - job: InstallNode
+            steps:
+                - task: NodeTool@0
+                  inputs:
+                      versionSource: 'spec'
+                      versionSpec: '20.x'
+                  displayName: 'Install Node.js'

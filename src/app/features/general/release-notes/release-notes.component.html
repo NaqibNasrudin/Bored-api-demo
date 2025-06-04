@@ -1,0 +1,60 @@
+<div class="p-2">
+    <button class="cursor-pointer flex items-center pb-4" type="button" (click)="back()">
+        <div class="bg-icon-back icon-[1rem] pt-6 mr-2"></div>
+        <span class="font-semibold">Back</span>
+    </button>
+    <div class="flex">
+        <button
+            *ngFor="let tab of tabs"
+            type="button"
+            class="p-2 border-2 rounded-md border-transparent min-w-[5rem] text-center cursor-pointer font-semibold mb-4 mr-4"
+            [class.text-blue-800]="selectedTab === tab"
+            [class.bg-blue-100]="selectedTab === tab"
+            (click)="selectedTab = tab">
+            {{ TabType[tab] }} <span *ngIf="tab === TabType['Known Issues']">({{ knownIssues.length }})</span>
+        </button>
+    </div>
+
+    <ng-container [ngSwitch]="selectedTab">
+        <div *ngSwitchCase="TabType['Release Update']">
+            <div *ngFor="let list of releaseNoteList" class="release-item-panel">
+                <div class="flex justify-between px-4 py-3">
+                    <div class="font-bold text-lg">
+                        Version {{ list.version }}, {{ list.date.toString() | date: 'd MMMM YYYY' }}
+                    </div>
+                    <button
+                        type="button"
+                        class="underline text-primary text-xs font-semibold cursor-pointer self-center"
+                        (click)="showMore(list)">
+                        Show More
+                    </button>
+                </div>
+                <div *ngIf="list.show" class="border-t px-4 py-3">
+                    <div
+                        *ngFor="let detail of list.detail; let lastDetail = last"
+                        [ngClass]="{ 'border-b mb-2 pb-2': !lastDetail }">
+                        <div class="text-gray-600 font-semibold mb-3">
+                            {{ ReleaseType[detail.type] }}
+                        </div>
+                        <ul class="list-decimal pl-5">
+                            <li *ngFor="let task of detail.list">
+                                {{ task.description }}
+                                <a *ngIf="isDev" class="underline text-blue-800" [href]="task.link">
+                                    {{ detail.type === ReleaseType['New Features'] ? 'Task' : 'Bug' }} {{ task.taskNo }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngSwitchCase="TabType['Known Issues']" class="border rounded-lg px-4 py-3 mb-4">
+            <ul class="list-decimal pl-5">
+                <li *ngFor="let issue of knownIssues">
+                    {{ issue }}
+                </li>
+            </ul>
+        </div>
+    </ng-container>
+</div>

@@ -1,0 +1,75 @@
+stages:
+    - stage: CheckPRTitleBuildEnvironment
+      displayName: Check Latest PR Title for Environment Info
+      jobs:
+          - job: CheckPRTitleBuildEnvironmentJob
+            steps:
+                - task: PowerShell@2
+                  name: CheckPRTitleBuildEnvironmentTask
+                  inputs:
+                      targetType: 'inline'
+                      script: |
+                          if ($env:SYSTEM_PULLREQUEST_PULLREQUESTID) {
+                            # Call the Azure DevOps Services Rest API.
+                            $url = "$($env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI)$env:SYSTEM_TEAMPROJECTID/_apis/git/repositories/$(Build.Repository.ID)/pullRequests/$(System.PullRequest.PullRequestId)?api-version=7.0"
+                            $headers = @{
+                                Authorization = "Bearer $(System.AccessToken)"
+                            }
+                            $pullRequestInfo = Invoke-RestMethod -Uri $url -Method 'GET' -ContentType 'application/json' -Headers $headers
+                            $json = $($pullRequestInfo | ConvertTo-Json -Depth 100 | ConvertFrom-Json)
+                            $description = $json.description
+                            $title = $json.title
+                            $status = $json.status
+                            echo "$title"
+                            echo "$status"
+                            echo "##vso[task.setvariable variable=pr_status;isOutput=true]$status"
+                          } else {
+                            # Call the Azure DevOps Services Rest API.
+                            $url = "$($env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI)$env:SYSTEM_TEAMPROJECTID/_apis/git/repositories/$(Build.Repository.ID)/pullrequests?searchCriteria.status=completed&searchCriteria.targetRefName=$(Build.SourceBranch)&api-version=7.1-preview.1"
+                            $headers = @{
+                            Authorization = "Bearer $(System.AccessToken)"
+                            }
+                            echo "URL:"
+                            echo "$url"
+                            $pullRequestInfo = Invoke-RestMethod -Uri $url -Method 'GET' -ContentType 'application/json' -Headers $headers
+
+                            $prTitleKeyword = "[Release]"
+
+                            echo "Response:"
+                            echo "$pullRequestInfo"
+                            $prWithKeyword = $pullRequestInfo.value | Where-Object { $_.title -like "*$prTitleKeyword*" } | Select-Object -First 1
+
+                            echo "Extracted PR (One should be returned): "
+                            echo "$prWithKeyword"
+
+                            $currentBuildPR = $prWithKeyword
+                            $title = $currentBuildPR.title
+                            $description = $currentBuildPR.description
+                            $status = $currentBuildPR.status
+
+                            echo "$title"
+                            echo "$status"
+                            echo "##vso[task.setvariable variable=pr_status;isOutput=true]$status"
+                          }
+
+                          $pattern = '\[(.*?)\]'
+                          $matches = ($title | Select-String -Pattern $pattern -AllMatches).Matches
+
+                          if($matches) {
+                              $action = $matches[0].Groups[1].Value
+                              echo "$action"
+                              echo "##vso[task.setvariable variable=action;isOutput=true]$action"
+
+                              if ($action -eq 'Release') {
+                                echo "Last PR title contains '[Release]'"
+
+                                $environment = $matches[1].Groups[1].Value
+                                echo "$environment"
+                                echo "##vso[task.setvariable variable=release_env;isOutput=true]$environment"
+                                echo "Environment Set to: $environment"
+
+                                $extractedVersionStr = ($title -split ':')[1].Trim();
+                                echo $extractedVersionStr;
+                                echo "##vso[task.setvariable variable=release_version;isoutput=true]$extractedVersionStr"
+                              }
+                          }

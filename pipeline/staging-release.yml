@@ -1,0 +1,60 @@
+parameters:
+    - name: StageDependencies
+      type: object
+      default: []
+
+stages:
+    - stage: DeployToStaging
+      displayName: Deploy to Staging
+      dependsOn: ${{ parameters.StageDependencies }}
+      condition: and(succeeded(), eq(dependencies.CheckPRTitleBuildEnvironment.outputs['CheckPRTitleBuildEnvironmentJob.CheckPRTitleBuildEnvironmentTask.release_env'], 'staging'), eq(dependencies.CheckPRTitleBuildEnvironment.outputs['CheckPRTitleBuildEnvironmentJob.CheckPRTitleBuildEnvironmentTask.pr_status'], 'completed'))
+      jobs:
+          - job: Build
+            steps:
+                - script: |
+                      npm install -g @angular/cli
+                      NODE_OPTIONS="--max-old-space-size=4096" npm install
+                  displayName: 'npm install with increased memory'
+
+                - script: |
+                      npm run build:staging
+                  displayName: 'npm build'
+
+                - script: |
+                      /bin/bash -c "$(curl -sL https://aka.ms/InstallAzureCLIDeb)"
+                      echo "Setting up Azure Storage configuration..."
+                      echo "Azure CLI setup complete."
+                  displayName: 'Install and Configure Azure CLI'
+                  env:
+                      STAGING_AZURE_STORAGE_ACCOUNT: $(STAGING_AZURE_STORAGE_ACCOUNT)
+                      STAGING_AZURE_STORAGE_KEY: $(STAGING_AZURE_STORAGE_KEY)
+                      STAGING_AZURE_STORAGE_CONNECTION_STRING: $(STAGING_AZURE_STORAGE_CONNECTION_STRING)
+
+                - script: |
+                      echo "Cleaning up the Azure Blob Storage container..."
+                      az storage blob delete-batch \
+                      --source $(AZURE_BLOB_CONTAINER) \
+                      --account-name $(STAGING_AZURE_STORAGE_ACCOUNT) \
+                      --account-key $(STAGING_AZURE_STORAGE_KEY) \
+                      --delete-snapshots include
+                  displayName: 'Clean up Azure Blob Storage Container'
+
+                - script: |
+                      echo "Uploading files to Azure Blob Storage..."
+                      az storage blob upload-batch \
+                          --destination $(AZURE_BLOB_CONTAINER) \
+                          --source $(ANGULAR_OUTPUT_PATH) \
+                          --account-name $(STAGING_AZURE_STORAGE_ACCOUNT) \
+                          --account-key $(STAGING_AZURE_STORAGE_KEY)
+                  displayName:
+                      'Upload Angular Output to Azure Blob Storage'
+
+                      # - script: |
+                      #     echo "Invalidating Azure CDN cache..."
+                      #     az cdn endpoint purge \
+                      #         --profile-name $(AZURE_CDN_PROFILE_NAME) \
+                      #         --name $(AZURE_CDN_ENDPOINT_NAME) \
+                      #         --resource-group $(AZURE_RESOURCE_GROUP) \
+                      #         --content-paths '/*'
+                      #   condition: ne(variables['AZURE_CDN_ENDPOINT_NAME'], '')
+                      #   displayName: 'Purge Azure CDN Cache'

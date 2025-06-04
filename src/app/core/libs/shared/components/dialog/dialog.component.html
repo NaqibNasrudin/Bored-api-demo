@@ -1,0 +1,26 @@
+<div class="p-[1.9375rem]">
+    <div class="p-6 pb-4">
+        <h2 mat-dialog-title class="text-center !text-2xl !font-semibold leading-6">
+            {{ data.title ? (data.title | translate) : '' }}
+        </h2>
+
+        <mat-dialog-content class="text-center">
+            <span
+                class="text-lg font-medium leading-5 whitespace-pre-line"
+                [innerHTML]="data.description ? (data.description | translate) : ''"></span>
+        </mat-dialog-content>
+    </div>
+    <mat-dialog-actions class="!p-6 flex !justify-center items-center !gap-10 !border-t !border-grayish-blue">
+        <button
+            *ngIf="data.cancelText"
+            type="button"
+            class="text-dark-grayish-blue border border-dark-grayish-blue rounded-full py-1.5 px-9"
+            (click)="dialogRef.close()">
+            {{ data.cancelText || 'button.cancel' | translate }}
+        </button>
+
+        <button type="button" class="text-white bg-soft-blue rounded-full py-1.5 px-9" (click)="dialogRef.close(true)">
+            {{ data.confirmText || 'button.ok' | translate }}
+        </button>
+    </mat-dialog-actions>
+</div>

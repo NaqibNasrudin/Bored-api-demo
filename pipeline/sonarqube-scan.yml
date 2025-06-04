@@ -1,0 +1,25 @@
+stages:
+    - stage: CodeScan
+      displayName: SonarQube Code Scan
+      jobs:
+          - job: SonarQube
+            steps:
+                - task: SonarQubePrepare@7
+                  inputs:
+                      SonarQube: $(SONARQUBE_CONNECTION_NAME)
+                      scannerMode: 'cli'
+                      configMode: 'manual'
+                      cliProjectKey: $(SONARQUBE_PROJECT_KEY)
+                      cliProjectName: $(SONARQUBE_PROJECT_NAME)
+                      cliSources: '.'
+                  displayName: 'Prepare Analysis Configuration'
+
+                - task: SonarQubeAnalyze@7
+                  inputs:
+                      jdkversion: 'JAVA_HOME_21_X64'
+                  displayName: 'Run Analysis'
+
+                - task: SonarQubePublish@7
+                  inputs:
+                      pollingTimeoutSec: '300'
+                  displayName: 'Publish Analysis Result'

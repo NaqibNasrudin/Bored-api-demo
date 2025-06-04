@@ -1,0 +1,29 @@
+parameters:
+    - name: StageDependencies
+      type: object
+      default: []
+
+stages:
+    - stage: BuildOnly
+      displayName: Build Only
+      dependsOn: ${{ parameters.StageDependencies }}
+      condition: or(
+          and(
+          succeeded(),
+          eq(dependencies.CheckPRTitleBuildEnvironment.outputs['CheckPRTitleBuildEnvironmentJob.CheckPRTitleBuildEnvironmentTask.pr_status'], 'active')
+          ),
+          and(
+          succeeded(),
+          eq(dependencies.CheckPRTitleBuildEnvironment.outputs['CheckPRTitleBuildEnvironmentJob.CheckPRTitleBuildEnvironmentTask.pr_status'], 'completed'),
+          ne(dependencies.CheckPRTitleBuildEnvironment.outputs['CheckPRTitleBuildEnvironmentJob.CheckPRTitleBuildEnvironmentTask.action'], 'Release')
+          ))
+      jobs:
+          - job: Build
+            steps:
+                - script: |
+                      npm install -g @angular/cli
+                      NODE_OPTIONS="--max-old-space-size=4096" npm install
+                  displayName: 'npm install with increased memory'
+
+                - script: |
+                      npm run build:staging
